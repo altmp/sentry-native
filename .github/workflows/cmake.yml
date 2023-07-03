@@ -19,7 +19,7 @@ jobs:
 
     steps:
     - name: Install libcurl
-      run: sudo apt-get install libcurl4-openssl-dev cmake -y
+      run: sudo apt-get install libcurl4-openssl-dev cmake build-essential -y
       
     - uses: actions/checkout@v3
 
