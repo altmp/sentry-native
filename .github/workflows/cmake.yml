@@ -65,6 +65,10 @@ jobs:
       run: |
         cd ${{github.workspace}}/build
         ninja
+        
+    - name: Strip debug data from crash-handler
+      run: |
+        objcopy --strip-debug --strip-unneeded build/crashpad_build/handler/crashpad_handler
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.1.2
