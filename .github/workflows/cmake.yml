@@ -78,12 +78,14 @@ jobs:
       run:
         shell: cmd
     steps:
+      - name: Clean working directory
+        run: del * /S /Q
+        
       - uses: robinraju/release-downloader@v1.8
         with:
           repository: "getsentry/sentry-native"
           latest: true
           fileName: "sentry-native.zip"
-          out-file-path: "latest_release"
           extract: true
 
       - name: Configure CMake
