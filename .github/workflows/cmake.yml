@@ -90,7 +90,7 @@ jobs:
 
       - name: Configure CMake
         run: |
-          "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvarsall.bat" amd64 && cmake -DCMAKE_BUILD_TYPE=release -B"${{github.workspace}}/build" -H"." -G"Ninja" -DCMAKE_C_COMPILER="C:/Program Files/LLVM/bin/clang-cl.exe" -DCMAKE_CXX_COMPILER="C:/Program Files/LLVM/bin/clang-cl.exe" -DCMAKE_LINKER="C:/Program Files/LLVM/bin/lld-link.exe" -DCMAKE_CXX_FLAGS="${CMAKE_CXX_FLAGS} -Wno-sign-compare -Wno-missing-field-initializers" -DCMAKE_C_FLAGS="${CMAKE_C_FLAGS} -Wno-sign-compare -Wno-missing-field-initializers"
+          "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvarsall.bat" amd64 && cmake -DCMAKE_BUILD_TYPE=release -B"${{github.workspace}}/build" -H"." -G"Ninja" -DCMAKE_C_COMPILER="C:/Program Files/LLVM/bin/clang-cl.exe -Wno-everything" -DCMAKE_CXX_COMPILER="C:/Program Files/LLVM/bin/clang-cl.exe -Wno-everything" -DCMAKE_LINKER="C:/Program Files/LLVM/bin/lld-link.exe"
       
       - name: Build
         run: |
