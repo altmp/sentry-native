@@ -49,6 +49,9 @@ jobs:
         out-file-path: "latest_release"
         extract: true
 
+    - name: List files
+      run: ls
+
     - name: Configure CMake
       run: |
         cmake -H"." -G"Ninja" -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_C_COMPILER="clang" -DCMAKE_CXX_COMPILER="clang++" -DCMAKE_LINKER="ld.lld" -DSENTRY_BACKEND=crashpad -DSENTRY_BUILD_SHARED_LIBS=OFF
