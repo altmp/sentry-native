@@ -7,35 +7,87 @@ on:
     branches: [ "master" ]
 
 env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
 
 jobs:
-  build:
-    # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
-    # You can convert this to a matrix build if you need cross-platform coverage.
-    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+  build-linux:
     runs-on: [self-hosted, Linux, X64]
 
     steps:
+    - name: Install Deps
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        sudo ./llvm.sh 15 all
+
+        wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+        echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ focal main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
+        sudo apt-get update
+        sudo apt-get install cmake ninja-build -y
+
+        sudo ln -sf /usr/bin/clang-cl-15 /usr/bin/clang-cl
+        sudo ln -sf /usr/bin/clang-15 /usr/bin/clang
+        sudo ln -sf /usr/bin/clang++-15 /usr/bin/clang++
+        sudo ln -sf /usr/bin/lld-link-15 /usr/bin/lld-link
+        sudo ln -sf /usr/bin/llvm-lib-15 /usr/bin/llvm-lib
+        sudo ln -sf /usr/bin/llvm-rc-15 /usr/bin/llvm-rc
+        sudo ln -sf /usr/bin/llvm-mt-15 /usr/bin/llvm-mt
+        sudo ln -sf /usr/bin/llvm-ar-15 /usr/bin/llvm-ar
+        sudo ln -sf /usr/bin/llvm-ranlib-15 /usr/bin/llvm-ranlib
+
+        if [ ! -d "$HOME/x64sysroot/" ]; then mkdir -p $HOME/x64sysroot/ && wget -qO- https://github.com/FabianTerhorst/coreclr-module/releases/download/11.0.4-dev/sysroot.tar | tar x -C $HOME/x64sysroot/ --no-same-owner; else echo "Sysroot does already exist for x86_64"; fi;
+        if [ ! -d "$HOME/winsysroot/" ]; then mkdir -p $HOME/winsysroot/ && wget -qO- https://github.com/FabianTerhorst/coreclr-module/releases/download/11.0.4-dev/winsysroot.tar.gz | tar xz -C $HOME/winsysroot/ --no-same-owner; else echo "Sysroot does already exist for win"; fi;
+
     - name: Install libcurl
       run: sudo apt-get install libcurl4-openssl-dev cmake build-essential -y
       
-    - uses: actions/checkout@v3
+    - uses: robinraju/release-downloader@v1.8
       with:
-        submodules: recursive
+        repository: "getsentry/sentry-native"
+        latest: true
+        fileName: "sentry-native.zip"
+        out-file-path: "latest_release"
+        extract: true
 
     - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSENTRY_BUILD_SHARED_LIBS=OFF
+      run: |
+        cmake -H"." -G"Ninja" -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_C_COMPILER="clang" -DCMAKE_CXX_COMPILER="clang++" -DCMAKE_LINKER="ld.lld" -DSENTRY_BACKEND=crashpad -DSENTRY_BUILD_SHARED_LIBS=OFF
 
     - name: Build
-      # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      run: |
+        cd ${{github.workspace}}/build
+        ninja
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.1.2
       with:
         name: linux-build
         path: ${{github.workspace}}/build
+
+  build-windows:
+    runs-on: [self-hosted, Windows, X64]
+    defaults:
+      run:
+        shell: cmd
+    steps:
+      - uses: robinraju/release-downloader@v1.8
+        with:
+          repository: "getsentry/sentry-native"
+          latest: true
+          fileName: "sentry-native.zip"
+          out-file-path: "latest_release"
+          extract: true
+
+      - name: Configure CMake
+        run: |
+          "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvarsall.bat" amd64 && cmake -DCMAKE_BUILD_TYPE=release -B"${{github.workspace}}/build" -H"." -G"Ninja" -DCMAKE_C_COMPILER="C:/Program Files/LLVM/bin/clang-cl.exe" -DCMAKE_CXX_COMPILER="C:/Program Files/LLVM/bin/clang-cl.exe" -DCMAKE_LINKER="C:/Program Files/LLVM/bin/lld-link.exe"
+
+      - name: Build
+        run: |
+          "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvarsall.bat" amd64 && cd ${{github.workspace}}/build && ninja
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: windows-build
+          path: ${{github.workspace}}/build
