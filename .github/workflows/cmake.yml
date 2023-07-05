@@ -95,7 +95,7 @@ jobs:
       - name: Nice trick
         shell: pwsh
         run: |
-          (gc .\build\build.ninja) -replace '/W4', '/W0 -mssse3 -msse4.2 -mpclmul -maes' | Out-File \build\build.ninja
+          (gc .\build\build.ninja) -replace '/W4', '/W0 -mssse3 -msse4.2 -mpclmul -maes' | Out-File .\build\build.ninja
       
       - name: Build
         run: |
