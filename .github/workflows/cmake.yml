@@ -49,7 +49,6 @@ jobs:
         repository: "getsentry/sentry-native"
         latest: true
         fileName: "sentry-native.zip"
-        out-file-path: "latest_release"
         extract: true
         
     - name: Remove old
